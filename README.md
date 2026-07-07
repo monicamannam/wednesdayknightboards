@@ -4,8 +4,9 @@ Tiny Vercel WebSocket test page for checking two-device refresh behavior.
 
 ## Test page
 
-Open `/` after starting or deploying the app. The page displays one shared
-in-memory number and an increment button.
+Open `/` after starting or deploying the app. The same page is also available
+at `/test.html`. It displays one shared in-memory number and an increment
+button.
 
 When one browser increments the number:
 
