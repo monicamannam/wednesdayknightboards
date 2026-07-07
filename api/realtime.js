@@ -507,7 +507,7 @@ function getPlayerGameState(game, playerToken) {
 
   const you = game.players[playerIndex];
   const currentPlayer = getCurrentPlayer(game);
-  const playableCards = new Set(getPlayableCards(you).map((card) => card.id));
+  const playableCards = new Set(getPlayableCards(you.hand).map((card) => card.id));
   const isYourTurn =
     game.status === "active" &&
     game.round.status === "active" &&
