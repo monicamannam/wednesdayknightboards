@@ -225,7 +225,7 @@ Player 5</textarea>
             body: JSON.stringify({ title, players }),
           });
 
-          const data = await response.json();
+          const data = await readResponse(response);
           if (!response.ok) {
             throw new Error(data.error || "Could not create the game.");
           }
@@ -277,6 +277,17 @@ Player 5</textarea>
         const summary = document.createElement("p");
         summary.textContent = `First player to ${game.targetScore} points wins.`;
         return summary;
+      }
+
+      async function readResponse(response) {
+        const text = await response.text();
+        try {
+          return text ? JSON.parse(text) : {};
+        } catch {
+          return {
+            error: text || `Request failed with status ${response.status}.`,
+          };
+        }
       }
     </script>
   </body>

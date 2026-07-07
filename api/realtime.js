@@ -76,7 +76,18 @@ const cards = [
 
 const cardByKey = new Map(cards.map((card) => [card.key, card]));
 
-const server = http.createServer(async (request, response) => {
+const server = http.createServer((request, response) => {
+  handleRequest(request, response).catch((error) => {
+    console.error(error);
+    if (!response.headersSent) {
+      sendJson(response, 500, { error: "Server error. Try creating a fresh game." });
+    } else {
+      response.end();
+    }
+  });
+});
+
+async function handleRequest(request, response) {
   const url = new URL(request.url ?? "/", "http://localhost");
   const action = url.searchParams.get("action");
 
@@ -129,6 +140,10 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 404, { error: "Game not found." });
       return;
     }
+    if (!isCurrentGameShape(game)) {
+      sendJson(response, 409, { error: "This link is for an older game. Create a fresh Court Courier game." });
+      return;
+    }
 
     const playerState = getPlayerGameState(game, url.searchParams.get("playerToken"));
     if (!playerState) {
@@ -160,6 +175,10 @@ const server = http.createServer(async (request, response) => {
       sendJson(response, 404, { error: "Game not found." });
       return;
     }
+    if (!isCurrentGameShape(game)) {
+      sendJson(response, 409, { error: "This link is for an older game. Create a fresh Court Courier game." });
+      return;
+    }
 
     const player = getPlayerByToken(game, body.playerToken);
     if (!player) {
@@ -189,7 +208,7 @@ const server = http.createServer(async (request, response) => {
   }
 
   sendJson(response, 404, { error: "Not found" });
-});
+}
 
 const wss = new WebSocketServer({ server });
 
@@ -259,6 +278,12 @@ function playCard(body) {
   const game = games.get(body.gameId);
   if (!game) {
     return { status: 404, error: "Game not found." };
+  }
+  if (!isCurrentGameShape(game)) {
+    return {
+      status: 409,
+      error: "This link is for an older game. Create a fresh Court Courier game.",
+    };
   }
 
   const actorIndex = game.players.findIndex((player) => player.token === body.playerToken);
@@ -456,6 +481,22 @@ function getHostGameState(game) {
       linkPath: `/player.html?game=${encodeURIComponent(game.id)}&token=${encodeURIComponent(player.token)}`,
     })),
   };
+}
+
+function isCurrentGameShape(game) {
+  return (
+    game &&
+    game.round &&
+    Array.isArray(game.round.deck) &&
+    Array.isArray(game.round.winnerIds) &&
+    Array.isArray(game.round.log) &&
+    game.players.every(
+      (player) =>
+        Array.isArray(player.hand) &&
+        Array.isArray(player.discard) &&
+        Array.isArray(player.privateLog),
+    )
+  );
 }
 
 function getPlayerGameState(game, playerToken) {

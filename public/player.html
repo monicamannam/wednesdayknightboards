@@ -347,7 +347,7 @@
           `/api/realtime?action=game&gameId=${encodeURIComponent(gameId)}&playerToken=${encodeURIComponent(playerToken)}`,
           { cache: "no-store" },
         );
-        const game = await response.json();
+        const game = await readResponse(response);
         if (!response.ok) {
           throw new Error(game.error || "Could not load the game.");
         }
@@ -380,7 +380,7 @@
               guessKey: guessSelect.classList.contains("hidden") ? null : guessSelect.value,
             }),
           });
-          const game = await response.json();
+          const game = await readResponse(response);
           if (!response.ok) {
             throw new Error(game.error || "Could not play that card.");
           }
@@ -406,7 +406,7 @@
             },
             body: JSON.stringify({ gameId, playerToken }),
           });
-          const game = await response.json();
+          const game = await readResponse(response);
           if (!response.ok) {
             throw new Error(game.error || "Could not start the next round.");
           }
@@ -600,6 +600,17 @@
           return "Your move.";
         }
         return "Connected.";
+      }
+
+      async function readResponse(response) {
+        const text = await response.text();
+        try {
+          return text ? JSON.parse(text) : {};
+        } catch {
+          return {
+            error: text || `Request failed with status ${response.status}.`,
+          };
+        }
       }
 
       function connectSocket() {
