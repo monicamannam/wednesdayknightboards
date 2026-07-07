@@ -1,0 +1,16 @@
+{
+  "name": "wednesdayknightboards",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel deploy"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "vercel": "^44.7.3"
+  }
+}
