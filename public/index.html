@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Wednesday Knight Boards Test</title>
+    <title>Admin - Wednesday Knight Boards</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -16,40 +16,65 @@
       body {
         min-height: 100vh;
         margin: 0;
-        display: grid;
-        place-items: center;
-        background: #f4f1ea;
+        background: #f7f4ee;
         color: #202124;
       }
 
       main {
-        width: min(92vw, 28rem);
-        padding: 2rem;
-        border: 1px solid #d8d2c4;
-        border-radius: 8px;
-        background: #fffdfa;
-        box-shadow: 0 18px 48px rgb(38 32 24 / 12%);
+        width: min(94vw, 48rem);
+        margin: 0 auto;
+        padding: 2rem 0 4rem;
       }
 
       h1 {
+        margin: 0 0 1.25rem;
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        letter-spacing: 0;
+      }
+
+      h2 {
         margin: 0 0 1rem;
-        font-size: 1.3rem;
+        font-size: 1.1rem;
+      }
+
+      section,
+      form {
+        margin-top: 1rem;
+        padding: 1.25rem;
+        border: 1px solid #d9d1c2;
+        border-radius: 8px;
+        background: #fffdfa;
+      }
+
+      label {
+        display: block;
+        margin-top: 1rem;
         font-weight: 700;
       }
 
-      .count {
-        margin: 1rem 0;
-        font-size: 5rem;
-        font-weight: 800;
-        line-height: 1;
-        font-variant-numeric: tabular-nums;
+      input,
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 0.4rem;
+        border: 1px solid #c8c0b1;
+        border-radius: 6px;
+        padding: 0.75rem;
+        background: white;
+        color: #202124;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 9rem;
+        resize: vertical;
       }
 
       button {
-        width: 100%;
-        min-height: 3rem;
+        min-height: 2.8rem;
         border: 0;
         border-radius: 6px;
+        padding: 0 1rem;
         background: #176b5d;
         color: white;
         font: inherit;
@@ -62,11 +87,41 @@
         opacity: 0.65;
       }
 
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1rem;
+      }
+
       .status {
         min-height: 1.5rem;
         margin-top: 1rem;
         color: #5d5a54;
-        font-size: 0.95rem;
+      }
+
+      .links {
+        display: grid;
+        gap: 0.75rem;
+      }
+
+      .player-link {
+        display: grid;
+        gap: 0.5rem;
+        padding: 0.85rem;
+        border: 1px solid #d9d1c2;
+        border-radius: 8px;
+        background: #f9f6ef;
+      }
+
+      .player-link a {
+        overflow-wrap: anywhere;
+        color: #176b5d;
+        font-weight: 700;
+      }
+
+      .hidden {
+        display: none;
       }
 
       @media (prefers-color-scheme: dark) {
@@ -75,119 +130,147 @@
           color: #f3f1ec;
         }
 
-        main {
+        section,
+        form {
           border-color: #3a3935;
           background: #22211f;
         }
 
+        input,
+        textarea {
+          border-color: #504d46;
+          background: #171717;
+          color: #f3f1ec;
+        }
+
         .status {
           color: #c8c2b8;
+        }
+
+        .player-link {
+          border-color: #3a3935;
+          background: #1b1a19;
+        }
+
+        .player-link a {
+          color: #69c7b8;
         }
       }
     </style>
   </head>
   <body>
     <main>
-      <h1>Shared counter test</h1>
-      <div id="count" class="count">...</div>
-      <button id="increment" type="button">Increment</button>
-      <div id="status" class="status">Connecting...</div>
+      <h1>Create game</h1>
+
+      <form id="create-game">
+        <label for="admin-token">Admin token</label>
+        <input id="admin-token" name="admin-token" type="password" autocomplete="current-password" required />
+
+        <label for="game-title">Game name</label>
+        <input id="game-title" name="game-title" value="Wednesday Knight Game" required />
+
+        <label for="players">Players, one per line</label>
+        <textarea id="players" name="players" required>Monica
+Player 2
+Player 3
+Player 4
+Player 5</textarea>
+
+        <div class="actions">
+          <button id="create-button" type="submit">Create game</button>
+        </div>
+
+        <div id="status" class="status"></div>
+      </form>
+
+      <section id="result" class="hidden">
+        <h2 id="result-title">Player links</h2>
+        <div id="links" class="links"></div>
+        <div class="actions">
+          <button id="copy-links" type="button">Copy all links</button>
+        </div>
+      </section>
     </main>
 
     <script>
-      const countEl = document.querySelector("#count");
-      const button = document.querySelector("#increment");
+      const form = document.querySelector("#create-game");
+      const createButton = document.querySelector("#create-button");
       const statusEl = document.querySelector("#status");
-      const clientId =
-        window.crypto?.randomUUID?.() ??
-        `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      let currentVersion = 0;
-      let reconnectTimer;
+      const resultEl = document.querySelector("#result");
+      const resultTitleEl = document.querySelector("#result-title");
+      const linksEl = document.querySelector("#links");
+      const copyLinksButton = document.querySelector("#copy-links");
+      let latestLinks = [];
 
-      async function loadState() {
-        const response = await fetch("/api/realtime?action=state", {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error("Could not load the counter.");
-        }
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        createButton.disabled = true;
+        statusEl.textContent = "Creating game...";
 
-        const state = await response.json();
-        countEl.textContent = state.count;
-        currentVersion = state.version;
-      }
+        const adminToken = document.querySelector("#admin-token").value;
+        const title = document.querySelector("#game-title").value;
+        const players = document
+          .querySelector("#players")
+          .value.split("\n")
+          .map((name) => name.trim())
+          .filter(Boolean);
 
-      async function increment() {
-        button.disabled = true;
         try {
-          const response = await fetch("/api/realtime?action=increment", {
+          const response = await fetch("/api/realtime?action=create-game", {
             method: "POST",
             headers: {
               "content-type": "application/json",
+              "x-admin-token": adminToken,
             },
-            body: JSON.stringify({ senderId: clientId }),
+            body: JSON.stringify({ title, players }),
           });
+
+          const data = await response.json();
           if (!response.ok) {
-            throw new Error("Could not increment the counter.");
+            throw new Error(data.error || "Could not create the game.");
           }
 
-          const state = await response.json();
-          countEl.textContent = state.count;
-          currentVersion = state.version;
-          statusEl.textContent = "Incremented. Other browsers were notified.";
+          renderLinks(data);
+          statusEl.textContent = "Game created.";
         } catch (error) {
           statusEl.textContent = error.message;
         } finally {
-          button.disabled = false;
+          createButton.disabled = false;
         }
+      });
+
+      copyLinksButton.addEventListener("click", async () => {
+        await navigator.clipboard.writeText(
+          latestLinks.map((item) => `${item.name}: ${item.href}`).join("\n"),
+        );
+        statusEl.textContent = "Copied player links.";
+      });
+
+      function renderLinks(game) {
+        latestLinks = game.players.map((player) => ({
+          name: player.name,
+          href: `${window.location.origin}${player.linkPath}`,
+        }));
+
+        resultTitleEl.textContent = `${game.title} links`;
+        linksEl.replaceChildren(
+          ...latestLinks.map((item) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "player-link";
+
+            const name = document.createElement("strong");
+            name.textContent = item.name;
+
+            const link = document.createElement("a");
+            link.href = item.href;
+            link.textContent = item.href;
+
+            wrapper.append(name, link);
+            return wrapper;
+          }),
+        );
+        resultEl.classList.remove("hidden");
       }
-
-      function connectSocket() {
-        clearTimeout(reconnectTimer);
-        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-        const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
-
-        socket.addEventListener("open", () => {
-          statusEl.textContent = "Connected. Open this page on another device.";
-        });
-
-        socket.addEventListener("message", async (event) => {
-          let message;
-          try {
-            message = JSON.parse(event.data);
-          } catch {
-            return;
-          }
-
-          if (
-            message.type === "counter-updated" &&
-            message.senderId !== clientId &&
-            message.version > currentVersion
-          ) {
-            statusEl.textContent = "Another browser changed the counter. Refreshing...";
-            await loadState();
-            window.location.reload();
-          }
-        });
-
-        socket.addEventListener("close", () => {
-          statusEl.textContent = "Disconnected. Reconnecting...";
-          reconnectTimer = window.setTimeout(connectSocket, 1500);
-        });
-
-        socket.addEventListener("error", () => {
-          socket.close();
-        });
-      }
-
-      button.addEventListener("click", increment);
-
-      loadState()
-        .then(connectSocket)
-        .catch((error) => {
-          countEl.textContent = "!";
-          statusEl.textContent = error.message;
-        });
     </script>
   </body>
 </html>

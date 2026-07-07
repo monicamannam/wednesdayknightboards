@@ -1,18 +1,31 @@
 # Wednesday Knight Boards
 
-Tiny Vercel WebSocket test page for checking two-device refresh behavior.
+Tiny Vercel WebSocket test app for creating a game and giving each player a
+private turn link.
 
-## Test page
+## Pages
 
-Open `/` after starting or deploying the app. The same page is also available
-at `/test.html`. It displays one shared in-memory number and an increment
-button.
+- `/` and `/admin.html`: create a game and generate player links.
+- `/player.html?game=...&token=...`: player turn page.
+- `/test.html`: old shared-counter WebSocket test page.
 
-When one browser increments the number:
+## Admin setup
 
-1. `POST /api/realtime?action=increment` updates the in-memory counter.
-2. The WebSocket endpoint broadcasts a `counter-updated` message.
-3. Other connected browsers reload and show the new number.
+Set an `ADMIN_TOKEN` environment variable in Vercel. The admin page asks for
+that token before it can create a game.
+
+Game creation stores the game in this deployment's in-memory function state and
+returns one unique link per player. Each link contains a player token, so players
+can only act as themselves.
+
+## Turn flow
+
+When the current player ends their turn:
+
+1. `POST /api/realtime?action=end-turn` validates the player token.
+2. The server advances to the next player.
+3. The WebSocket endpoint broadcasts a `game-updated` message.
+4. Other connected browsers reload and show the latest turn.
 
 ## Run locally
 
@@ -25,7 +38,7 @@ Then open the local Vercel URL printed by the command.
 
 ## Important Vercel note
 
-This intentionally keeps state in memory so it is simple to test. That means the
-counter can reset after a deploy or function restart, and different Vercel
+This intentionally keeps game state in memory so it is simple to test. That
+means games can reset after a deploy or function restart, and different Vercel
 Function instances can briefly disagree. If this becomes real game state, move
-the counter and room updates to Redis or another shared store.
+games and room updates to Redis or another shared store.
