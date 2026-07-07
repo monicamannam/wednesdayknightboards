@@ -1,13 +1,13 @@
 # Wednesday Knight Boards
 
-Tiny Vercel WebSocket app for playing Court Courier, a Love Letter-style card
-game with private player links.
+Tiny Vercel WebSocket app for playing private-link board games.
 
 ## Pages
 
 - `/`: landing page that tells players to use their game link.
-- `/create.html`: create a Court Courier game and generate player links.
+- `/create.html`: create a game and generate player links.
 - `/player.html?game=...&token=...`: player turn page.
+- `/industrial.html?game=...&token=...`: Iron Ledger player page.
 - `/test.html`: old shared-counter WebSocket test page.
 
 ## Host setup
@@ -19,7 +19,13 @@ Game creation stores the game in this deployment's in-memory function state and
 returns one unique link per player. Each link contains a player token, so players
 can only see and act as themselves.
 
-## Game flow
+## Games
+
+Court Courier is a Love Letter-style card game. Iron Ledger is an original
+industrial network game with routes, industries, resources, loans, income, and
+cotton sales.
+
+## Court Courier flow
 
 Court Courier uses a small deck of roles. On your turn you hold two cards, play
 one, resolve its effect, and the next active player is notified over WebSockets.

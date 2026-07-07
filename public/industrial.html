@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Iron Ledger - Wednesday Knight Boards</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+        line-height: 1.5;
+      }
+
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: #f4f1ea;
+        color: #202124;
+      }
+
+      main {
+        width: min(96vw, 78rem);
+        margin: 0 auto;
+        padding: 1.25rem 0 3rem;
+      }
+
+      h1,
+      h2,
+      p {
+        margin-top: 0;
+      }
+
+      h1 {
+        margin-bottom: 0.25rem;
+        font-size: clamp(1.8rem, 4vw, 2.7rem);
+        letter-spacing: 0;
+      }
+
+      button,
+      select {
+        min-height: 2.75rem;
+        border-radius: 6px;
+        font: inherit;
+      }
+
+      button {
+        border: 0;
+        padding: 0 1rem;
+        background: #176b5d;
+        color: white;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+      }
+
+      select {
+        width: 100%;
+        border: 1px solid #c8c0b1;
+        padding: 0 0.75rem;
+        background: white;
+        color: #202124;
+      }
+
+      label {
+        display: grid;
+        gap: 0.35rem;
+        font-weight: 700;
+      }
+
+      .topbar,
+      .panel {
+        border: 1px solid #d8d2c4;
+        border-radius: 8px;
+        background: #fffdfa;
+      }
+
+      .topbar {
+        display: grid;
+        gap: 0.75rem;
+        padding: 1.25rem;
+      }
+
+      .meta,
+      .stats,
+      .tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+      }
+
+      .meta span,
+      .stats span,
+      .tag {
+        padding: 0.25rem 0.55rem;
+        border: 1px solid #ddd5c8;
+        border-radius: 999px;
+        background: #f9f6ef;
+        color: #5d5a54;
+        font-size: 0.9rem;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(18rem, 0.9fr);
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .panel {
+        padding: 1rem;
+      }
+
+      .actions {
+        display: grid;
+        gap: 0.8rem;
+      }
+
+      .board {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+        gap: 0.75rem;
+      }
+
+      .location,
+      .route,
+      .player {
+        padding: 0.75rem;
+        border: 1px solid #e3dccf;
+        border-radius: 8px;
+        background: #f9f6ef;
+      }
+
+      .location h3,
+      .player h3 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+      }
+
+      .list {
+        display: grid;
+        gap: 0.6rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .log {
+        margin: 0;
+        padding-left: 1.2rem;
+      }
+
+      .status {
+        min-height: 1.5rem;
+        margin: 0;
+        color: #5d5a54;
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      @media (max-width: 800px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #161616;
+          color: #f3f1ec;
+        }
+
+        .topbar,
+        .panel {
+          border-color: #3a3935;
+          background: #22211f;
+        }
+
+        .location,
+        .route,
+        .player,
+        .meta span,
+        .stats span,
+        .tag {
+          border-color: #3a3935;
+          background: #1b1a19;
+          color: #c8c2b8;
+        }
+
+        select {
+          border-color: #504d46;
+          background: #171717;
+          color: #f3f1ec;
+        }
+
+        .status {
+          color: #c8c2b8;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="topbar">
+        <div>
+          <p id="you" class="status">Loading player...</p>
+          <h1 id="title">Loading game...</h1>
+          <div class="meta">
+            <span id="turn">Turn ...</span>
+            <span id="current">Current player ...</span>
+            <span id="limit">Limit ...</span>
+          </div>
+        </div>
+        <div id="stats" class="stats"></div>
+        <p id="status" class="status">Connecting...</p>
+      </section>
+
+      <div class="grid">
+        <section class="panel">
+          <h2>Actions</h2>
+          <div class="actions">
+            <label>
+              Action
+              <select id="action">
+                <option value="build-industry">Build industry</option>
+                <option value="build-link">Build canal route</option>
+                <option value="sell-cotton">Sell cotton</option>
+                <option value="loan">Take loan</option>
+                <option value="pass">Pass</option>
+              </select>
+            </label>
+            <label id="location-label">
+              Location
+              <select id="location"></select>
+            </label>
+            <label id="industry-label">
+              Industry
+              <select id="industry"></select>
+            </label>
+            <label id="route-label" class="hidden">
+              Route
+              <select id="route"></select>
+            </label>
+            <label id="mill-label" class="hidden">
+              Mill
+              <select id="mill"></select>
+            </label>
+            <button id="submit" type="button" disabled>Take action</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Players</h2>
+          <ul id="players" class="list"></ul>
+        </section>
+
+        <section class="panel">
+          <h2>Locations</h2>
+          <div id="locations" class="board"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Routes</h2>
+          <ul id="routes" class="list"></ul>
+        </section>
+
+        <section class="panel">
+          <h2>Log</h2>
+          <ol id="log" class="log"></ol>
+        </section>
+      </div>
+    </main>
+
+    <script>
+      const params = new URLSearchParams(window.location.search);
+      const gameId = params.get("game");
+      const playerToken = params.get("token");
+      const youEl = document.querySelector("#you");
+      const titleEl = document.querySelector("#title");
+      const turnEl = document.querySelector("#turn");
+      const currentEl = document.querySelector("#current");
+      const limitEl = document.querySelector("#limit");
+      const statsEl = document.querySelector("#stats");
+      const statusEl = document.querySelector("#status");
+      const actionSelect = document.querySelector("#action");
+      const locationSelect = document.querySelector("#location");
+      const industrySelect = document.querySelector("#industry");
+      const routeSelect = document.querySelector("#route");
+      const millSelect = document.querySelector("#mill");
+      const submitButton = document.querySelector("#submit");
+      const playersEl = document.querySelector("#players");
+      const locationsEl = document.querySelector("#locations");
+      const routesEl = document.querySelector("#routes");
+      const logEl = document.querySelector("#log");
+      let currentVersion = 0;
+      let latestGame = null;
+      let reconnectTimer;
+
+      async function loadGame(message = "") {
+        if (!gameId || !playerToken) {
+          throw new Error("This player link is missing its game or token.");
+        }
+
+        const response = await fetch(
+          `/api/realtime?action=game&gameId=${encodeURIComponent(gameId)}&playerToken=${encodeURIComponent(playerToken)}`,
+          { cache: "no-store" },
+        );
+        const game = await readResponse(response);
+        if (!response.ok) {
+          throw new Error(game.error || "Could not load the game.");
+        }
+
+        renderGame(game);
+        if (message) statusEl.textContent = message;
+      }
+
+      async function takeAction() {
+        submitButton.disabled = true;
+        statusEl.textContent = "Taking action...";
+
+        const action = actionSelect.value;
+        const body = {
+          gameId,
+          playerToken,
+          industrialAction: action,
+          locationId: locationSelect.value,
+          industryType: industrySelect.value,
+          edgeId: routeSelect.value,
+          industryId: millSelect.value,
+        };
+
+        try {
+          const response = await fetch("/api/realtime?action=industrial-action", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const game = await readResponse(response);
+          if (!response.ok) {
+            throw new Error(game.error || "Could not take that action.");
+          }
+
+          renderGame(game);
+          statusEl.textContent = "Action complete. Everyone else was notified.";
+        } catch (error) {
+          statusEl.textContent = error.message;
+          updateActionFields();
+        }
+      }
+
+      function renderGame(game) {
+        latestGame = game;
+        currentVersion = game.version;
+        titleEl.textContent = game.title;
+        youEl.textContent = `You are ${game.you.name}`;
+        turnEl.textContent = `Turn ${game.turnNumber}`;
+        currentEl.textContent =
+          game.status === "finished" ? `Winner: ${game.winnerNames.join(", ")}` : `${game.currentPlayerName}'s turn`;
+        limitEl.textContent = `${game.actionLimit} turn limit`;
+        statusEl.textContent = getStatusText(game);
+
+        statsEl.replaceChildren(
+          stat(`Money $${game.you.money}`),
+          stat(`Income ${game.you.income}`),
+          stat(`Score ${game.you.score}`),
+          stat(`Coal ${game.you.coal}`),
+          stat(`Iron ${game.you.iron}`),
+          stat(`Beer ${game.you.beer}`),
+        );
+
+        renderPlayers(game);
+        renderLocations(game);
+        renderRoutes(game);
+        renderLog(game);
+        renderOptions(game);
+        updateActionFields();
+      }
+
+      function stat(text) {
+        const item = document.createElement("span");
+        item.textContent = text;
+        return item;
+      }
+
+      function renderPlayers(game) {
+        playersEl.replaceChildren(
+          ...game.players.map((player) => {
+            const item = document.createElement("li");
+            item.className = "player";
+            const title = document.createElement("h3");
+            title.textContent = player.isYou ? `${player.name} (you)` : player.name;
+            const tags = document.createElement("div");
+            tags.className = "tags";
+            const labels = [
+              `${player.score} VP`,
+              `$${player.money}`,
+              `income ${player.income}`,
+              `coal ${player.coal}`,
+              `iron ${player.iron}`,
+              `beer ${player.beer}`,
+            ];
+            if (player.isCurrent && game.status === "active") labels.unshift("up now");
+            for (const label of labels) tags.append(tag(label));
+            item.append(title, tags);
+            return item;
+          }),
+        );
+      }
+
+      function renderLocations(game) {
+        locationsEl.replaceChildren(
+          ...game.locations.map((location) => {
+            const wrapper = document.createElement("div");
+            wrapper.className = "location";
+            const title = document.createElement("h3");
+            title.textContent = location.name;
+            const slots = document.createElement("p");
+            slots.textContent = `Slots: ${location.slots.join(", ")}`;
+            const tags = document.createElement("div");
+            tags.className = "tags";
+            if (location.industries.length === 0) {
+              tags.append(tag("empty"));
+            }
+            for (const industry of location.industries) {
+              tags.append(tag(`${industry.ownerName}: ${industry.typeName}${industry.flipped ? "" : " (unsold)"}`));
+            }
+            wrapper.append(title, slots, tags);
+            return wrapper;
+          }),
+        );
+      }
+
+      function renderRoutes(game) {
+        routesEl.replaceChildren(
+          ...game.edges.map((route) => {
+            const item = document.createElement("li");
+            item.className = "route";
+            item.textContent = route.ownerName ? `${route.name}: ${route.ownerName}` : `${route.name}: open`;
+            return item;
+          }),
+        );
+      }
+
+      function renderLog(game) {
+        logEl.replaceChildren(
+          ...game.log.map((entry) => {
+            const item = document.createElement("li");
+            item.textContent = entry;
+            return item;
+          }),
+        );
+      }
+
+      function renderOptions(game) {
+        locationSelect.replaceChildren(
+          ...game.locations.map((location) => option(location.id, location.name)),
+        );
+        industrySelect.replaceChildren(
+          ...game.industryTypes.map((industry) =>
+            option(
+              industry.id,
+              `${industry.name} ($${industry.cost}, coal ${industry.coal}, iron ${industry.iron})`,
+            ),
+          ),
+        );
+        routeSelect.replaceChildren(...game.edges.map((route) => option(route.id, route.name)));
+        millSelect.replaceChildren(
+          ...(game.sellableMills.length > 0
+            ? game.sellableMills.map((mill) => option(mill.id, mill.locationName))
+            : [option("", "No unsold cotton mills")]),
+        );
+      }
+
+      function updateActionFields() {
+        const action = actionSelect.value;
+        document.querySelector("#location-label").classList.toggle("hidden", action !== "build-industry");
+        document.querySelector("#industry-label").classList.toggle("hidden", action !== "build-industry");
+        document.querySelector("#route-label").classList.toggle("hidden", action !== "build-link");
+        document.querySelector("#mill-label").classList.toggle("hidden", action !== "sell-cotton");
+        submitButton.disabled =
+          !latestGame ||
+          !latestGame.isYourTurn ||
+          latestGame.status === "finished" ||
+          (action === "sell-cotton" && !millSelect.value);
+      }
+
+      function tag(text) {
+        const item = document.createElement("span");
+        item.className = "tag";
+        item.textContent = text;
+        return item;
+      }
+
+      function option(value, text) {
+        const item = document.createElement("option");
+        item.value = value;
+        item.textContent = text;
+        return item;
+      }
+
+      function getStatusText(game) {
+        if (game.status === "finished") return "Game complete.";
+        if (game.isYourTurn) return "Your action.";
+        return "Connected.";
+      }
+
+      async function readResponse(response) {
+        const text = await response.text();
+        try {
+          return text ? JSON.parse(text) : {};
+        } catch {
+          return { error: text || `Request failed with status ${response.status}.` };
+        }
+      }
+
+      function connectSocket() {
+        clearTimeout(reconnectTimer);
+        const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const socket = new WebSocket(`${protocol}//${window.location.host}/api/realtime`);
+
+        socket.addEventListener("open", () => {
+          statusEl.textContent = latestGame ? getStatusText(latestGame) : "Connected.";
+        });
+        socket.addEventListener("message", async (event) => {
+          let message;
+          try {
+            message = JSON.parse(event.data);
+          } catch {
+            return;
+          }
+
+          if (
+            message.type === "game-updated" &&
+            message.gameId === gameId &&
+            message.version > currentVersion
+          ) {
+            await loadGame("Game updated.");
+          }
+        });
+        socket.addEventListener("close", () => {
+          statusEl.textContent = "Disconnected. Reconnecting...";
+          reconnectTimer = window.setTimeout(connectSocket, 1500);
+        });
+        socket.addEventListener("error", () => socket.close());
+      }
+
+      actionSelect.addEventListener("change", updateActionFields);
+      millSelect.addEventListener("change", updateActionFields);
+      submitButton.addEventListener("click", takeAction);
+
+      loadGame()
+        .then(connectSocket)
+        .catch((error) => {
+          titleEl.textContent = "Could not load game";
+          statusEl.textContent = error.message;
+        });
+    </script>
+  </body>
+</html>

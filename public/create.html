@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Create Court Courier</title>
+    <title>Create Game</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -53,6 +53,7 @@
       }
 
       input,
+      select,
       textarea {
         width: 100%;
         box-sizing: border-box;
@@ -160,11 +161,17 @@
   </head>
   <body>
     <main>
-      <h1>Create Court Courier</h1>
+      <h1>Create game</h1>
 
       <form id="create-game">
         <label for="game-key">Game key</label>
         <input id="game-key" name="game-key" type="password" autocomplete="current-password" required />
+
+        <label for="game-type">Game</label>
+        <select id="game-type" name="game-type">
+          <option value="courier">Court Courier</option>
+          <option value="industrial">Iron Ledger</option>
+        </select>
 
         <label for="game-title">Game name</label>
         <input id="game-title" name="game-title" value="Court Courier" required />
@@ -208,6 +215,7 @@ Player 5</textarea>
         statusEl.textContent = "Creating game...";
 
         const gameKey = document.querySelector("#game-key").value;
+        const gameType = document.querySelector("#game-type").value;
         const title = document.querySelector("#game-title").value;
         const players = document
           .querySelector("#players")
@@ -222,7 +230,7 @@ Player 5</textarea>
               "content-type": "application/json",
               "x-game-key": gameKey,
             },
-            body: JSON.stringify({ title, players }),
+            body: JSON.stringify({ gameType, title, players }),
           });
 
           const data = await readResponse(response);
@@ -275,9 +283,17 @@ Player 5</textarea>
 
       function createSummary(game) {
         const summary = document.createElement("p");
-        summary.textContent = `First player to ${game.targetScore} points wins.`;
+        summary.textContent =
+          game.kind === "industrial"
+            ? `Iron Ledger runs for ${game.actionLimit} turns or until everyone passes.`
+            : `First player to ${game.targetScore} points wins.`;
         return summary;
       }
+
+      document.querySelector("#game-type").addEventListener("change", (event) => {
+        document.querySelector("#game-title").value =
+          event.target.value === "industrial" ? "Iron Ledger" : "Court Courier";
+      });
 
       async function readResponse(response) {
         const text = await response.text();

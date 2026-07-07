@@ -124,10 +124,16 @@ async function handleRequest(request, response) {
       return;
     }
 
-    const game = createGame({
-      title: body.title,
-      playerNames,
-    });
+    const game =
+      body.gameType === "industrial"
+        ? createIndustrialGame({
+            title: body.title,
+            playerNames,
+          })
+        : createGame({
+            title: body.title,
+            playerNames,
+          });
     games.set(game.id, game);
     broadcast({ type: "game-created", gameId: game.id, version: game.version });
     sendJson(response, 201, getHostGameState(game));
@@ -141,7 +147,7 @@ async function handleRequest(request, response) {
       return;
     }
     if (!isCurrentGameShape(game)) {
-      sendJson(response, 409, { error: "This link is for an older game. Create a fresh Court Courier game." });
+      sendJson(response, 409, { error: "This link is for an older game. Create a fresh game." });
       return;
     }
 
@@ -168,6 +174,19 @@ async function handleRequest(request, response) {
     return;
   }
 
+  if (request.method === "POST" && action === "industrial-action") {
+    const body = await readJson(request);
+    const result = takeIndustrialAction(body);
+    if (result.error) {
+      sendJson(response, result.status, { error: result.error });
+      return;
+    }
+
+    broadcast({ type: "game-updated", gameId: result.game.id, version: result.game.version });
+    sendJson(response, 200, getPlayerGameState(result.game, body.playerToken));
+    return;
+  }
+
   if (request.method === "POST" && action === "start-round") {
     const body = await readJson(request);
     const game = games.get(body.gameId);
@@ -176,7 +195,7 @@ async function handleRequest(request, response) {
       return;
     }
     if (!isCurrentGameShape(game)) {
-      sendJson(response, 409, { error: "This link is for an older game. Create a fresh Court Courier game." });
+      sendJson(response, 409, { error: "This link is for an older game. Create a fresh game." });
       return;
     }
 
@@ -220,6 +239,7 @@ function createGame({ title, playerNames }) {
   const now = new Date().toISOString();
   const game = {
     id: createToken(8),
+    kind: "courier",
     title: String(title || "Court Courier").trim(),
     status: "active",
     targetScore: getTargetScore(playerNames.length),
@@ -282,8 +302,11 @@ function playCard(body) {
   if (!isCurrentGameShape(game)) {
     return {
       status: 409,
-      error: "This link is for an older game. Create a fresh Court Courier game.",
+      error: "This link is for an older game. Create a fresh game.",
     };
+  }
+  if (game.kind === "industrial") {
+    return { status: 409, error: "This is an Iron Ledger game, not a Court Courier game." };
   }
 
   const actorIndex = game.players.findIndex((player) => player.token === body.playerToken);
@@ -469,8 +492,13 @@ function endRound(game, activePlayers) {
 }
 
 function getHostGameState(game) {
+  if (game.kind === "industrial") {
+    return getIndustrialHostGameState(game);
+  }
+
   return {
     id: game.id,
+    kind: game.kind ?? "courier",
     title: game.title,
     targetScore: game.targetScore,
     roundNumber: game.roundNumber,
@@ -484,6 +512,10 @@ function getHostGameState(game) {
 }
 
 function isCurrentGameShape(game) {
+  if (game?.kind === "industrial") {
+    return isIndustrialGameShape(game);
+  }
+
   return (
     game &&
     game.round &&
@@ -500,6 +532,14 @@ function isCurrentGameShape(game) {
 }
 
 function getPlayerGameState(game, playerToken) {
+  if (game.kind === "industrial") {
+    return getIndustrialPlayerGameState(game, playerToken);
+  }
+
+  return getCourierPlayerGameState(game, playerToken);
+}
+
+function getCourierPlayerGameState(game, playerToken) {
   const playerIndex = game.players.findIndex((player) => player.token === playerToken);
   if (playerIndex === -1) {
     return null;
@@ -575,6 +615,430 @@ function getPlayerGameState(game, playerToken) {
       })),
     log: game.round.log.slice(-8).reverse(),
   };
+}
+
+const industrialLocations = [
+  { id: "wolver", name: "Wolver Crossing", slots: ["mine", "iron", "cotton"] },
+  { id: "blackmere", name: "Blackmere", slots: ["mine", "brewery"] },
+  { id: "kingsford", name: "Kingsford", slots: ["iron", "cotton", "brewery"] },
+  { id: "ashwick", name: "Ashwick", slots: ["cotton", "iron"] },
+  { id: "canalport", name: "Canalport", slots: ["brewery", "cotton"] },
+  { id: "northgate", name: "Northgate", slots: ["mine", "iron", "cotton"] },
+];
+
+const industrialEdges = [
+  { id: "wolver-blackmere", a: "wolver", b: "blackmere", name: "Wolver Crossing - Blackmere" },
+  { id: "blackmere-kingsford", a: "blackmere", b: "kingsford", name: "Blackmere - Kingsford" },
+  { id: "kingsford-ashwick", a: "kingsford", b: "ashwick", name: "Kingsford - Ashwick" },
+  { id: "ashwick-canalport", a: "ashwick", b: "canalport", name: "Ashwick - Canalport" },
+  { id: "canalport-wolver", a: "canalport", b: "wolver", name: "Canalport - Wolver Crossing" },
+  { id: "blackmere-northgate", a: "blackmere", b: "northgate", name: "Blackmere - Northgate" },
+  { id: "northgate-ashwick", a: "northgate", b: "ashwick", name: "Northgate - Ashwick" },
+];
+
+const industrialTypes = {
+  mine: {
+    name: "Coal Mine",
+    cost: 5,
+    coal: 0,
+    iron: 0,
+    beer: 0,
+    points: 3,
+    income: 1,
+    produces: { coal: 2 },
+  },
+  iron: {
+    name: "Iron Works",
+    cost: 5,
+    coal: 1,
+    iron: 0,
+    beer: 0,
+    points: 3,
+    income: 1,
+    produces: { iron: 2 },
+  },
+  brewery: {
+    name: "Brewery",
+    cost: 6,
+    coal: 0,
+    iron: 1,
+    beer: 0,
+    points: 4,
+    income: 1,
+    produces: { beer: 2 },
+  },
+  cotton: {
+    name: "Cotton Mill",
+    cost: 8,
+    coal: 1,
+    iron: 1,
+    beer: 0,
+    points: 0,
+    income: 0,
+    produces: {},
+  },
+};
+
+function createIndustrialGame({ title, playerNames }) {
+  const now = new Date().toISOString();
+
+  return {
+    id: createToken(8),
+    kind: "industrial",
+    title: String(title || "Iron Ledger").trim(),
+    status: "active",
+    turnNumber: 1,
+    actionLimit: playerNames.length * 12,
+    currentPlayerIndex: 0,
+    passCount: 0,
+    locations: industrialLocations,
+    edges: industrialEdges.map((edge) => ({ ...edge, ownerId: null })),
+    industries: [],
+    log: ["The canal era begins."],
+    players: playerNames.map((name) => ({
+      id: createToken(6),
+      name,
+      token: createToken(18),
+      money: 25,
+      income: 0,
+      score: 0,
+      coal: 1,
+      iron: 1,
+      beer: 0,
+      lastAction: "",
+    })),
+    version: 1,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function takeIndustrialAction(body) {
+  const game = games.get(body.gameId);
+  if (!game) {
+    return { status: 404, error: "Game not found." };
+  }
+  if (game.kind !== "industrial") {
+    return { status: 409, error: "This is not an Iron Ledger game." };
+  }
+  if (!isIndustrialGameShape(game)) {
+    return { status: 409, error: "This link is for an older game. Create a fresh game." };
+  }
+  if (game.status === "finished") {
+    return { status: 409, error: "This game is already finished." };
+  }
+
+  const playerIndex = game.players.findIndex((player) => player.token === body.playerToken);
+  const player = game.players[playerIndex];
+  if (!player) {
+    return { status: 403, error: "This player link is not valid for the game." };
+  }
+  if (playerIndex !== game.currentPlayerIndex) {
+    return { status: 409, error: "It is not your turn." };
+  }
+
+  let result;
+  if (body.industrialAction === "build-industry") {
+    result = buildIndustry(game, player, body.locationId, body.industryType);
+  } else if (body.industrialAction === "build-link") {
+    result = buildLink(game, player, body.edgeId);
+  } else if (body.industrialAction === "sell-cotton") {
+    result = sellCotton(game, player, body.industryId);
+  } else if (body.industrialAction === "loan") {
+    result = takeLoan(game, player);
+  } else if (body.industrialAction === "pass") {
+    result = passIndustrialTurn(game, player);
+  } else {
+    result = { status: 400, error: "Choose a valid action." };
+  }
+
+  if (result.error) {
+    return result;
+  }
+
+  finishIndustrialAction(game, player, result.summary);
+  return { game };
+}
+
+function buildIndustry(game, player, locationId, industryType) {
+  const location = industrialLocations.find((candidate) => candidate.id === locationId);
+  const type = industrialTypes[industryType];
+  if (!location || !type || !location.slots.includes(industryType)) {
+    return { status: 400, error: "Choose a valid industry slot." };
+  }
+  if (!isIndustrialLocationReachable(game, player, location.id)) {
+    return { status: 409, error: "Build within your network, or build anywhere as your first network action." };
+  }
+  if (
+    game.industries.some(
+      (industry) => industry.locationId === location.id && industry.type === industryType,
+    )
+  ) {
+    return { status: 409, error: "That industry slot is already occupied." };
+  }
+  const spend = spendIndustrialCost(player, type);
+  if (spend.error) {
+    return spend;
+  }
+
+  const industry = {
+    id: createToken(8),
+    ownerId: player.id,
+    locationId: location.id,
+    type: industryType,
+    flipped: industryType !== "cotton",
+  };
+  game.industries.push(industry);
+  player.score += type.points;
+  player.income += type.income;
+  for (const [resource, amount] of Object.entries(type.produces)) {
+    player[resource] += amount;
+  }
+
+  return { summary: `${player.name} built ${type.name} in ${location.name}.` };
+}
+
+function buildLink(game, player, edgeId) {
+  const edge = game.edges.find((candidate) => candidate.id === edgeId);
+  if (!edge) {
+    return { status: 400, error: "Choose a valid route." };
+  }
+  if (edge.ownerId) {
+    return { status: 409, error: "That route is already built." };
+  }
+  if (!isIndustrialEdgeReachable(game, player, edge)) {
+    return { status: 409, error: "Build routes from your existing network, or anywhere as your first link." };
+  }
+  const spend = spendIndustrialCost(player, { cost: 4, coal: 1, iron: 0, beer: 0 });
+  if (spend.error) {
+    return spend;
+  }
+
+  edge.ownerId = player.id;
+  player.score += 2;
+  player.income += 1;
+  return { summary: `${player.name} built the ${edge.name} canal route.` };
+}
+
+function sellCotton(game, player, industryId) {
+  const industry = game.industries.find(
+    (candidate) => candidate.id === industryId && candidate.ownerId === player.id,
+  );
+  if (!industry || industry.type !== "cotton" || industry.flipped) {
+    return { status: 400, error: "Choose one of your unsold cotton mills." };
+  }
+  if (player.beer < 1) {
+    return { status: 409, error: "Selling cotton requires 1 beer." };
+  }
+
+  player.beer -= 1;
+  industry.flipped = true;
+  player.money += 8;
+  player.income += 2;
+  player.score += 5;
+  return { summary: `${player.name} sold cotton from ${getIndustrialLocationName(industry.locationId)}.` };
+}
+
+function takeLoan(game, player) {
+  player.money += 10;
+  player.income -= 2;
+  return { summary: `${player.name} took a loan.` };
+}
+
+function passIndustrialTurn(game, player) {
+  game.passCount += 1;
+  return { summary: `${player.name} passed.` };
+}
+
+function finishIndustrialAction(game, player, summary) {
+  if (summary) {
+    addIndustrialLog(game, summary);
+    player.lastAction = summary;
+  }
+  player.money += Math.max(0, player.income);
+
+  if (summary && !summary.endsWith("passed.")) {
+    game.passCount = 0;
+  }
+
+  if (game.turnNumber >= game.actionLimit || game.passCount >= game.players.length) {
+    finishIndustrialGame(game);
+    touchGame(game);
+    return;
+  }
+
+  game.turnNumber += 1;
+  game.currentPlayerIndex = (game.currentPlayerIndex + 1) % game.players.length;
+  addIndustrialLog(game, `${game.players[game.currentPlayerIndex].name}'s turn begins.`);
+  touchGame(game);
+}
+
+function finishIndustrialGame(game) {
+  for (const player of game.players) {
+    player.score += Math.floor(Math.max(0, player.money) / 5);
+  }
+  game.status = "finished";
+  addIndustrialLog(game, "The canal era ends. Final cash bonuses were scored.");
+}
+
+function spendIndustrialCost(player, cost) {
+  if (player.money < cost.cost) {
+    return { status: 409, error: "Not enough money." };
+  }
+  if (player.coal < cost.coal) {
+    return { status: 409, error: "Not enough coal." };
+  }
+  if (player.iron < cost.iron) {
+    return { status: 409, error: "Not enough iron." };
+  }
+  if (player.beer < cost.beer) {
+    return { status: 409, error: "Not enough beer." };
+  }
+
+  player.money -= cost.cost;
+  player.coal -= cost.coal;
+  player.iron -= cost.iron;
+  player.beer -= cost.beer;
+  return {};
+}
+
+function isIndustrialLocationReachable(game, player, locationId) {
+  if (!hasIndustrialNetwork(game, player)) {
+    return true;
+  }
+  if (game.industries.some((industry) => industry.ownerId === player.id && industry.locationId === locationId)) {
+    return true;
+  }
+  return game.edges.some((edge) => edge.ownerId === player.id && (edge.a === locationId || edge.b === locationId));
+}
+
+function isIndustrialEdgeReachable(game, player, edge) {
+  if (!hasIndustrialNetwork(game, player)) {
+    return true;
+  }
+  return isIndustrialLocationReachable(game, player, edge.a) || isIndustrialLocationReachable(game, player, edge.b);
+}
+
+function hasIndustrialNetwork(game, player) {
+  return (
+    game.industries.some((industry) => industry.ownerId === player.id) ||
+    game.edges.some((edge) => edge.ownerId === player.id)
+  );
+}
+
+function getIndustrialHostGameState(game) {
+  return {
+    id: game.id,
+    kind: game.kind,
+    title: game.title,
+    actionLimit: game.actionLimit,
+    version: game.version,
+    players: game.players.map((player) => ({
+      id: player.id,
+      name: player.name,
+      linkPath: `/industrial.html?game=${encodeURIComponent(game.id)}&token=${encodeURIComponent(player.token)}`,
+    })),
+  };
+}
+
+function getIndustrialPlayerGameState(game, playerToken) {
+  const playerIndex = game.players.findIndex((player) => player.token === playerToken);
+  if (playerIndex === -1) {
+    return null;
+  }
+
+  const you = game.players[playerIndex];
+  const isYourTurn = game.status === "active" && playerIndex === game.currentPlayerIndex;
+
+  return {
+    id: game.id,
+    kind: game.kind,
+    title: game.title,
+    status: game.status,
+    turnNumber: game.turnNumber,
+    actionLimit: game.actionLimit,
+    version: game.version,
+    currentPlayerName: game.players[game.currentPlayerIndex]?.name ?? "",
+    isYourTurn,
+    you: {
+      id: you.id,
+      name: you.name,
+      money: you.money,
+      income: you.income,
+      score: you.score,
+      coal: you.coal,
+      iron: you.iron,
+      beer: you.beer,
+    },
+    players: game.players.map((player, index) => ({
+      id: player.id,
+      name: player.name,
+      money: player.money,
+      income: player.income,
+      score: player.score,
+      coal: player.coal,
+      iron: player.iron,
+      beer: player.beer,
+      isCurrent: index === game.currentPlayerIndex,
+      isYou: index === playerIndex,
+      lastAction: player.lastAction,
+    })),
+    locations: industrialLocations.map((location) => ({
+      ...location,
+      industries: game.industries
+        .filter((industry) => industry.locationId === location.id)
+        .map((industry) => ({
+          ...industry,
+          ownerName: getIndustrialPlayerName(game, industry.ownerId),
+          typeName: industrialTypes[industry.type].name,
+        })),
+    })),
+    edges: game.edges.map((edge) => ({
+      ...edge,
+      ownerName: edge.ownerId ? getIndustrialPlayerName(game, edge.ownerId) : "",
+    })),
+    industryTypes: Object.entries(industrialTypes).map(([id, type]) => ({ id, ...type })),
+    sellableMills: game.industries
+      .filter((industry) => industry.ownerId === you.id && industry.type === "cotton" && !industry.flipped)
+      .map((industry) => ({
+        id: industry.id,
+        locationName: getIndustrialLocationName(industry.locationId),
+      })),
+    log: game.log.slice(-10).reverse(),
+    winnerNames: getIndustrialWinners(game).map((player) => player.name),
+  };
+}
+
+function isIndustrialGameShape(game) {
+  return (
+    game.kind === "industrial" &&
+    Array.isArray(game.players) &&
+    Array.isArray(game.industries) &&
+    Array.isArray(game.edges) &&
+    Array.isArray(game.log)
+  );
+}
+
+function getIndustrialWinners(game) {
+  if (game.status !== "finished") {
+    return [];
+  }
+
+  const highScore = Math.max(...game.players.map((player) => player.score));
+  return game.players.filter((player) => player.score === highScore);
+}
+
+function getIndustrialPlayerName(game, playerId) {
+  return game.players.find((player) => player.id === playerId)?.name ?? "Unknown";
+}
+
+function getIndustrialLocationName(locationId) {
+  return industrialLocations.find((location) => location.id === locationId)?.name ?? "Unknown";
+}
+
+function addIndustrialLog(game, message) {
+  game.log.push(message);
+  game.log = game.log.slice(-40);
 }
 
 function getGameKeyError(request, body) {
