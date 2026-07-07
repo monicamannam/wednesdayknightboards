@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Admin - Wednesday Knight Boards</title>
+    <title>Host - Wednesday Knight Boards</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -163,8 +163,8 @@
       <h1>Create game</h1>
 
       <form id="create-game">
-        <label for="admin-token">Admin token</label>
-        <input id="admin-token" name="admin-token" type="password" autocomplete="current-password" required />
+        <label for="game-key">Game key</label>
+        <input id="game-key" name="game-key" type="password" autocomplete="current-password" required />
 
         <label for="game-title">Game name</label>
         <input id="game-title" name="game-title" value="Wednesday Knight Game" required />
@@ -207,7 +207,7 @@ Player 5</textarea>
         createButton.disabled = true;
         statusEl.textContent = "Creating game...";
 
-        const adminToken = document.querySelector("#admin-token").value;
+        const gameKey = document.querySelector("#game-key").value;
         const title = document.querySelector("#game-title").value;
         const players = document
           .querySelector("#players")
@@ -220,7 +220,7 @@ Player 5</textarea>
             method: "POST",
             headers: {
               "content-type": "application/json",
-              "x-admin-token": adminToken,
+              "x-game-key": gameKey,
             },
             body: JSON.stringify({ title, players }),
           });

@@ -5,14 +5,15 @@ private turn link.
 
 ## Pages
 
-- `/` and `/admin.html`: create a game and generate player links.
+- `/`: landing page that tells players to use their game link.
+- Unlinked host page: create a game and generate player links.
 - `/player.html?game=...&token=...`: player turn page.
 - `/test.html`: old shared-counter WebSocket test page.
 
-## Admin setup
+## Host setup
 
-Set an `ADMIN_TOKEN` environment variable in Vercel. The admin page asks for
-that token before it can create a game.
+Set a `GAME_KEY` environment variable in Vercel. The host page asks for that key
+before it can create a game.
 
 Game creation stores the game in this deployment's in-memory function state and
 returns one unique link per player. Each link contains a player token, so players

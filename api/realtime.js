@@ -31,9 +31,9 @@ const server = http.createServer(async (request, response) => {
 
   if (request.method === "POST" && action === "create-game") {
     const body = await readJson(request);
-    const adminError = getAdminError(request, body);
-    if (adminError) {
-      sendJson(response, adminError.status, { error: adminError.message });
+    const keyError = getGameKeyError(request, body);
+    if (keyError) {
+      sendJson(response, keyError.status, { error: keyError.message });
       return;
     }
 
@@ -126,20 +126,20 @@ function sendJson(response, statusCode, body) {
   response.end(JSON.stringify(body));
 }
 
-function getAdminError(request, body) {
-  const expectedToken = process.env.ADMIN_TOKEN;
-  if (!expectedToken) {
+function getGameKeyError(request, body) {
+  const expectedKey = process.env.GAME_KEY;
+  if (!expectedKey) {
     return {
       status: 503,
-      message: "ADMIN_TOKEN is not set on this deployment.",
+      message: "GAME_KEY is not set on this deployment.",
     };
   }
 
-  const actualToken = request.headers["x-admin-token"] ?? body.adminToken;
-  if (actualToken !== expectedToken) {
+  const actualKey = request.headers["x-game-key"] ?? body.gameKey;
+  if (actualKey !== expectedKey) {
     return {
       status: 401,
-      message: "Admin token is missing or incorrect.",
+      message: "Game key is missing or incorrect.",
     };
   }
 
