@@ -1,12 +1,12 @@
 # Wednesday Knight Boards
 
-Tiny Vercel WebSocket test app for creating a game and giving each player a
-private turn link.
+Tiny Vercel WebSocket app for playing Court Courier, a Love Letter-style card
+game with private player links.
 
 ## Pages
 
 - `/`: landing page that tells players to use their game link.
-- `/create.html`: create a game and generate player links.
+- `/create.html`: create a Court Courier game and generate player links.
 - `/player.html?game=...&token=...`: player turn page.
 - `/test.html`: old shared-counter WebSocket test page.
 
@@ -17,16 +17,17 @@ before it can create a game.
 
 Game creation stores the game in this deployment's in-memory function state and
 returns one unique link per player. Each link contains a player token, so players
-can only act as themselves.
+can only see and act as themselves.
 
-## Turn flow
+## Game flow
 
-When the current player ends their turn:
+Court Courier uses a small deck of roles. On your turn you hold two cards, play
+one, resolve its effect, and the next active player is notified over WebSockets.
+Rounds end when one player remains or the deck runs out. First player to the
+target score wins.
 
-1. `POST /api/realtime?action=end-turn` validates the player token.
-2. The server advances to the next player.
-3. The WebSocket endpoint broadcasts a `game-updated` message.
-4. Other connected browsers reload and show the latest turn.
+Card names are original to this app: Scout, Seer, Duelist, Shield, Envoy,
+Regent, Advisor, and Crown.
 
 ## Run locally
 

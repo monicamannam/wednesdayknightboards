@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Host - Wednesday Knight Boards</title>
+    <title>Create Court Courier</title>
     <style>
       :root {
         color-scheme: light dark;
@@ -160,14 +160,14 @@
   </head>
   <body>
     <main>
-      <h1>Create game</h1>
+      <h1>Create Court Courier</h1>
 
       <form id="create-game">
         <label for="game-key">Game key</label>
         <input id="game-key" name="game-key" type="password" autocomplete="current-password" required />
 
         <label for="game-title">Game name</label>
-        <input id="game-title" name="game-title" value="Wednesday Knight Game" required />
+        <input id="game-title" name="game-title" value="Court Courier" required />
 
         <label for="players">Players, one per line</label>
         <textarea id="players" name="players" required>Monica
@@ -254,6 +254,7 @@ Player 5</textarea>
 
         resultTitleEl.textContent = `${game.title} links`;
         linksEl.replaceChildren(
+          createSummary(game),
           ...latestLinks.map((item) => {
             const wrapper = document.createElement("div");
             wrapper.className = "player-link";
@@ -270,6 +271,12 @@ Player 5</textarea>
           }),
         );
         resultEl.classList.remove("hidden");
+      }
+
+      function createSummary(game) {
+        const summary = document.createElement("p");
+        summary.textContent = `First player to ${game.targetScore} points wins.`;
+        return summary;
       }
     </script>
   </body>
