@@ -141,7 +141,7 @@ const horseTramCountEl = document.querySelector("#horse-tram-count");
 const steamTramCountEl = document.querySelector("#steam-tram-count");
 const electricTramCountEl = document.querySelector("#electric-tram-count");
 const stationsEl = document.querySelector("#stations");
-const cardsEl = document.querySelector("#cards");
+const playerHandEl = document.querySelector("#player-hand");
 const statusEl = document.querySelector("#status");
 const cardSizes = {
   PASSENGER: { width: 1086, height: 1448 },
@@ -166,10 +166,15 @@ const tramCards = {
   steam: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 10),
   electric: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 15),
 };
+const passengerArtByColor = new Map(
+  cardSheet.cards
+    .filter((card) => card.type === "PASSENGER")
+    .map((card) => [card.color, card]),
+);
 const gameState = {
   players: [
-    { name: "Player 1", money: 9999, score: 0 },
-    { name: "Player 2", money: 9999, score: 0 },
+    { name: "Player 1", money: 9999, score: 0, hand: [] },
+    { name: "Player 2", money: 9999, score: 0, hand: [] },
   ],
   tours: 0,
   passengerDeck: shuffle(createPassengerDeck()),
@@ -181,20 +186,31 @@ const gameState = {
   ].filter(Boolean),
 };
 
+dealStartingHands();
 renderCards();
 buyTramButton.addEventListener("click", buyTopTram);
 
 function renderCards() {
   const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
-  const passengerCards = cardSheet.cards.filter((card) => card.type === "PASSENGER");
 
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
-  cardsEl.replaceChildren(...passengerCards.map(createCardFigure));
+  playerHandEl.replaceChildren(...gameState.players[0].hand.map(createHandCardFigure));
   renderMoney();
   renderPassengerPiles();
   renderTramCounts();
   renderTramDeck();
   statusEl.textContent = `${gameState.tramDeck.length} trams in deck`;
+}
+
+function dealStartingHands() {
+  for (let cardNumber = 0; cardNumber < 6; cardNumber += 1) {
+    for (const player of gameState.players) {
+      const card = gameState.passengerDeck.shift();
+      if (card) {
+        player.hand.push(card);
+      }
+    }
+  }
 }
 
 function renderMoney() {
@@ -260,28 +276,57 @@ function createStationCard(card) {
 }
 
 function createCardFigure(card) {
+  const artCard = getCardArt(card);
   const figure = document.createElement("figure");
   const frame = document.createElement("div");
   const crop = document.createElement("div");
 
   figure.className = "card-figure";
   frame.className = "card-frame";
-  frame.style.setProperty("--frame-width", cardSizes[card.type].width);
-  frame.style.setProperty("--frame-height", cardSizes[card.type].height);
+  frame.style.setProperty("--frame-width", cardSizes[artCard.type].width);
+  frame.style.setProperty("--frame-height", cardSizes[artCard.type].height);
 
   crop.className = "card-crop";
-  crop.style.setProperty("--x", card.x);
-  crop.style.setProperty("--y", card.y);
-  crop.style.setProperty("--crop-w", card.width);
-  crop.style.setProperty("--crop-h", card.height);
-  crop.style.setProperty("--rotation", `${card.rotationAppliedDegrees}deg`);
-  crop.dataset.rotated = String(card.rotationAppliedDegrees !== 0);
+  crop.style.setProperty("--x", artCard.x);
+  crop.style.setProperty("--y", artCard.y);
+  crop.style.setProperty("--crop-w", artCard.width);
+  crop.style.setProperty("--crop-h", artCard.height);
+  crop.style.setProperty("--rotation", `${artCard.rotationAppliedDegrees}deg`);
+  crop.dataset.rotated = String(artCard.rotationAppliedDegrees !== 0);
   crop.setAttribute("role", "img");
   crop.setAttribute("aria-label", getCardLabel(card));
 
   frame.append(crop);
   figure.append(frame);
   return figure;
+}
+
+function createHandCardFigure(card) {
+  const figure = createCardFigure(card);
+  const frame = figure.querySelector(".card-frame");
+  figure.classList.add("hand-card");
+  frame.append(createPassengerBadge(card));
+  return figure;
+}
+
+function createPassengerBadge(card) {
+  const badge = document.createElement("div");
+  const number = document.createElement("span");
+  const points = document.createElement("span");
+
+  badge.className = "passenger-badge";
+  number.textContent = card.color === "*" ? "*" : card.number;
+  points.textContent = card.color === "*" ? "Wild" : `${card.points} VP`;
+  badge.append(number, points);
+  return badge;
+}
+
+function getCardArt(card) {
+  if (card.type !== "PASSENGER" || typeof card.x === "number") {
+    return card;
+  }
+
+  return passengerArtByColor.get(card.color) ?? passengerArtByColor.get("*");
 }
 
 function getCardLabel(card) {

@@ -169,6 +169,10 @@ h1 {
   background: transparent;
 }
 
+.hand-card .card-frame {
+  overflow: visible;
+}
+
 .card-crop {
   position: absolute;
   top: 50%;
@@ -185,6 +189,35 @@ h1 {
     calc(var(--y) / (var(--sheet-height) - var(--crop-h)) * 100%);
   transform: translate(-50%, -50%) rotate(var(--rotation));
   transform-origin: center;
+}
+
+.passenger-badge {
+  position: absolute;
+  right: 0.2rem;
+  bottom: 0.2rem;
+  z-index: 2;
+  display: grid;
+  gap: 0.15rem;
+  min-width: 3.1rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid rgb(32 33 36 / 18%);
+  border-radius: 6px;
+  background: rgb(255 253 250 / 92%);
+  color: #202124;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: 0 8px 18px rgb(38 32 24 / 16%);
+}
+
+.passenger-badge span:first-child {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.passenger-badge span:last-child {
+  color: #5d5a54;
+  font-size: 0.72rem;
+  line-height: 1;
 }
 
 .card-crop[data-rotated="true"] {
@@ -237,6 +270,16 @@ h1 {
 
   .status,
   .section-title {
+    color: #c8c2b8;
+  }
+
+  .passenger-badge {
+    border-color: rgb(255 255 255 / 14%);
+    background: rgb(34 33 31 / 92%);
+    color: #f3f1ec;
+  }
+
+  .passenger-badge span:last-child {
     color: #c8c2b8;
   }
 
