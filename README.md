@@ -5,9 +5,8 @@ Tiny Vercel WebSocket app for playing private-link board games.
 ## Pages
 
 - `/`: landing page that tells players to use their game link.
-- `/create.html`: create a game and generate player links.
-- `/player.html?game=...&token=...`: player turn page.
-- `/industrial.html?game=...&token=...`: Iron Ledger player page.
+- `/create.html`: create a Tram Ride game and generate player links.
+- `/tram-ride.html?game=...&token=...`: empty Tram Ride player page.
 - `/test.html`: old shared-counter WebSocket test page.
 
 ## Host setup
@@ -21,19 +20,8 @@ can only see and act as themselves.
 
 ## Games
 
-Court Courier is a Love Letter-style card game. Iron Ledger is an original
-industrial network game with routes, industries, resources, loans, income, and
-cotton sales.
-
-## Court Courier flow
-
-Court Courier uses a small deck of roles. On your turn you hold two cards, play
-one, resolve its effect, and the next active player is notified over WebSockets.
-Rounds end when one player remains or the deck runs out. First player to the
-target score wins.
-
-Card names are original to this app: Scout, Seer, Duelist, Shield, Envoy,
-Regent, Advisor, and Crown.
+Tram Ride is the only game shell in this app right now. Its player page is empty
+until the rules and interface are added.
 
 ## Run locally
 
