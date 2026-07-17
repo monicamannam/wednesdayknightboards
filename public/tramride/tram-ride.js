@@ -131,6 +131,11 @@ const cardSheet = {
 const stationsEl = document.querySelector("#stations");
 const cardsEl = document.querySelector("#cards");
 const statusEl = document.querySelector("#status");
+const cardSizes = {
+  PASSENGER: { width: 1086, height: 1882.4 },
+  STATION: { width: 1086, height: 724 },
+  TRAM: { width: 1086, height: 724 },
+};
 
 renderCards();
 
@@ -165,6 +170,9 @@ function createCardFigure(card) {
 
   figure.className = "card-figure";
   frame.className = "card-frame";
+  frame.style.setProperty("--frame-width", cardSizes[card.type].width);
+  frame.style.setProperty("--frame-height", cardSizes[card.type].height);
+
   crop.className = "card-crop";
   crop.style.setProperty("--x", card.x);
   crop.style.setProperty("--y", card.y);

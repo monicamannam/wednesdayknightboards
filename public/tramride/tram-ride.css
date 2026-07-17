@@ -7,8 +7,6 @@
   --sheet-url: url("https://i.imgur.com/ZKOFImc.jpeg");
   --sheet-width: 6163;
   --sheet-height: 3387;
-  --card-width: 1086;
-  --card-height: 1448;
 }
 
 * {
@@ -70,7 +68,7 @@ h1 {
 .card-frame {
   position: relative;
   width: 100%;
-  aspect-ratio: var(--card-width) / var(--card-height);
+  aspect-ratio: var(--frame-width) / var(--frame-height);
   overflow: hidden;
   background: transparent;
 }
@@ -94,8 +92,8 @@ h1 {
 }
 
 .card-crop[data-rotated="true"] {
-  width: calc(var(--card-height) / var(--card-width) * 100%);
-  height: calc(var(--card-width) / var(--card-height) * 100%);
+  width: calc(var(--frame-height) / var(--frame-width) * 100%);
+  height: calc(var(--frame-width) / var(--frame-height) * 100%);
 }
 
 .passenger-counter {
