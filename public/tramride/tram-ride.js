@@ -132,6 +132,9 @@ const tramDeckEl = document.querySelector("#tram-deck");
 const buyTramButton = document.querySelector("#buy-tram");
 const player1MoneyEl = document.querySelector("#player-1-money");
 const player2MoneyEl = document.querySelector("#player-2-money");
+const horseTramCountEl = document.querySelector("#horse-tram-count");
+const steamTramCountEl = document.querySelector("#steam-tram-count");
+const electricTramCountEl = document.querySelector("#electric-tram-count");
 const stationsEl = document.querySelector("#stations");
 const cardsEl = document.querySelector("#cards");
 const statusEl = document.querySelector("#status");
@@ -167,6 +170,7 @@ function renderCards() {
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
   cardsEl.replaceChildren(...passengerCards.map(createCardFigure));
   renderMoney();
+  renderTramCounts();
   renderTramDeck();
   statusEl.textContent = `${gameState.tramDeck.length} trams in deck`;
 }
@@ -174,6 +178,12 @@ function renderCards() {
 function renderMoney() {
   player1MoneyEl.textContent = formatMoney(gameState.players[0].money);
   player2MoneyEl.textContent = formatMoney(gameState.players[1].money);
+}
+
+function renderTramCounts() {
+  horseTramCountEl.textContent = String(countTramsByCost(5));
+  steamTramCountEl.textContent = String(countTramsByCost(10));
+  electricTramCountEl.textContent = String(countTramsByCost(15));
 }
 
 function renderTramDeck() {
@@ -199,6 +209,7 @@ function buyTopTram() {
   gameState.players[0].money -= topCard.cost;
   gameState.tramDeck.shift();
   renderMoney();
+  renderTramCounts();
   renderTramDeck();
   statusEl.textContent = `Player 1 bought a ${getTramName(topCard)} for ${formatMoney(topCard.cost)}.`;
 }
@@ -261,4 +272,8 @@ function getTramName(card) {
 
 function formatMoney(amount) {
   return `$${amount}`;
+}
+
+function countTramsByCost(cost) {
+  return gameState.tramDeck.filter((card) => card.cost === cost).length;
 }
