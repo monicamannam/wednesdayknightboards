@@ -128,7 +128,10 @@ const cardSheet = {
   ],
 };
 
-const tramsEl = document.querySelector("#trams");
+const tramDeckEl = document.querySelector("#tram-deck");
+const buyTramButton = document.querySelector("#buy-tram");
+const player1MoneyEl = document.querySelector("#player-1-money");
+const player2MoneyEl = document.querySelector("#player-2-money");
 const stationsEl = document.querySelector("#stations");
 const cardsEl = document.querySelector("#cards");
 const statusEl = document.querySelector("#status");
@@ -137,18 +140,67 @@ const cardSizes = {
   STATION: { width: 1086, height: 724 },
   TRAM: { width: 1086, height: 724 },
 };
+const tramCards = {
+  horse: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 5),
+  steam: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 10),
+  electric: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 15),
+};
+const gameState = {
+  players: [
+    { name: "Player 1", money: 9999 },
+    { name: "Player 2", money: 9999 },
+  ],
+  tramDeck: [
+    ...Array.from({ length: 5 }, () => tramCards.horse),
+    ...Array.from({ length: 4 }, () => tramCards.steam),
+    ...Array.from({ length: 7 }, () => tramCards.electric),
+  ].filter(Boolean),
+};
 
 renderCards();
+buyTramButton.addEventListener("click", buyTopTram);
 
 function renderCards() {
-  const tramCards = cardSheet.cards.filter((card) => card.type === "TRAM");
   const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
   const passengerCards = cardSheet.cards.filter((card) => card.type === "PASSENGER");
 
-  tramsEl.replaceChildren(...tramCards.map(createCardFigure));
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
   cardsEl.replaceChildren(...passengerCards.map(createCardFigure));
-  statusEl.textContent = `${cardSheet.cards.length} cards`;
+  renderMoney();
+  renderTramDeck();
+  statusEl.textContent = `${gameState.tramDeck.length} trams in deck`;
+}
+
+function renderMoney() {
+  player1MoneyEl.textContent = formatMoney(gameState.players[0].money);
+  player2MoneyEl.textContent = formatMoney(gameState.players[1].money);
+}
+
+function renderTramDeck() {
+  const previewCards = gameState.tramDeck.slice(0, 3);
+  tramDeckEl.replaceChildren(...previewCards.map(createCardFigure));
+
+  const topCard = gameState.tramDeck[0];
+  if (topCard) {
+    buyTramButton.disabled = gameState.players[0].money < topCard.cost;
+    buyTramButton.textContent = `Buy top tram - ${formatMoney(topCard.cost)}`;
+  } else {
+    buyTramButton.disabled = true;
+    buyTramButton.textContent = "No trams left";
+  }
+}
+
+function buyTopTram() {
+  const topCard = gameState.tramDeck[0];
+  if (!topCard || gameState.players[0].money < topCard.cost) {
+    return;
+  }
+
+  gameState.players[0].money -= topCard.cost;
+  gameState.tramDeck.shift();
+  renderMoney();
+  renderTramDeck();
+  statusEl.textContent = `Player 1 bought a ${getTramName(topCard)} for ${formatMoney(topCard.cost)}.`;
 }
 
 function createStationCard(card) {
@@ -198,4 +250,15 @@ function getCardLabel(card) {
 
   const color = card.color === "*" ? "wild" : card.color.toLowerCase();
   return `${color} ${card.type.toLowerCase()} card`;
+}
+
+function getTramName(card) {
+  if (card.cost === 5) return "horse tram";
+  if (card.cost === 10) return "steam tram";
+  if (card.cost === 15) return "electric tram";
+  return "tram";
+}
+
+function formatMoney(amount) {
+  return `$${amount}`;
 }

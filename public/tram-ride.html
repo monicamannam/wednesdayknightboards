@@ -11,8 +11,22 @@
     <main>
       <h1>Tram Ride</h1>
       <p id="status" class="status">Loading cards...</p>
-      <h2 class="section-title">Trams</h2>
-      <section id="trams" class="tram-row" aria-label="Tram cards"></section>
+      <section class="game-topbar" aria-label="Game state">
+        <div class="money-board" aria-label="Player money">
+          <div class="money-row">
+            <span>Player 1</span>
+            <strong id="player-1-money">$9999</strong>
+          </div>
+          <div class="money-row">
+            <span>Player 2</span>
+            <strong id="player-2-money">$9999</strong>
+          </div>
+        </div>
+        <div class="tram-deck-panel">
+          <div id="tram-deck" class="tram-deck" aria-label="Tram deck"></div>
+          <button id="buy-tram" class="buy-button" type="button">Buy tram</button>
+        </div>
+      </section>
       <h2 class="section-title">Stations</h2>
       <section id="stations" class="station-row" aria-label="Station cards"></section>
       <h2 class="section-title">Passengers</h2>

@@ -47,15 +47,94 @@ h1 {
   text-transform: uppercase;
 }
 
-.tram-row,
+.game-topbar {
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(14rem, 22rem);
+  gap: 1rem;
+  align-items: start;
+  justify-content: space-between;
+  margin: 1rem 0 0.5rem;
+}
+
+.money-board {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.money-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  min-height: 2.5rem;
+  padding: 0 0.8rem;
+  border: 1px solid #d9d1c2;
+  border-radius: 6px;
+  background: #fffdfa;
+  color: #5d5a54;
+  font-weight: 700;
+}
+
+.money-row strong {
+  color: #202124;
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tram-deck-panel {
+  display: grid;
+  gap: 0.7rem;
+  justify-items: stretch;
+}
+
+.tram-deck {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1086 / 724;
+}
+
+.tram-deck .card-figure {
+  position: absolute;
+  inset: 0;
+}
+
+.tram-deck .card-figure:nth-child(1) {
+  z-index: 3;
+}
+
+.tram-deck .card-figure:nth-child(2) {
+  z-index: 2;
+  transform: translate(0.45rem, 0.45rem);
+  opacity: 0.55;
+}
+
+.tram-deck .card-figure:nth-child(3) {
+  z-index: 1;
+  transform: translate(0.9rem, 0.9rem);
+  opacity: 0.32;
+}
+
+.buy-button {
+  min-height: 2.8rem;
+  border: 0;
+  border-radius: 6px;
+  padding: 0 1rem;
+  background: #176b5d;
+  color: white;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.buy-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .station-row {
   display: grid;
   gap: 1rem;
   align-items: start;
-}
-
-.tram-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .station-row {
@@ -126,13 +205,12 @@ h1 {
 }
 
 @media (max-width: 560px) {
-  .station-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.75rem;
+  .game-topbar {
+    grid-template-columns: 1fr;
   }
 
-  .tram-row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .station-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
   }
 
@@ -153,11 +231,13 @@ h1 {
     color: #c8c2b8;
   }
 
+  .money-row,
   .passenger-counter {
     border-color: #3a3935;
     background: #22211f;
   }
 
+  .money-row strong,
   .passenger-counter strong {
     color: #f3f1ec;
   }
