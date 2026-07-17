@@ -131,7 +131,10 @@ const cardSheet = {
 const tramDeckEl = document.querySelector("#tram-deck");
 const buyTramButton = document.querySelector("#buy-tram");
 const player1MoneyEl = document.querySelector("#player-1-money");
+const player1ScoreEl = document.querySelector("#player-1-score");
 const player2MoneyEl = document.querySelector("#player-2-money");
+const player2ScoreEl = document.querySelector("#player-2-score");
+const tourCountEl = document.querySelector("#tour-count");
 const horseTramCountEl = document.querySelector("#horse-tram-count");
 const steamTramCountEl = document.querySelector("#steam-tram-count");
 const electricTramCountEl = document.querySelector("#electric-tram-count");
@@ -150,9 +153,10 @@ const tramCards = {
 };
 const gameState = {
   players: [
-    { name: "Player 1", money: 9999 },
-    { name: "Player 2", money: 9999 },
+    { name: "Player 1", money: 9999, score: 0 },
+    { name: "Player 2", money: 9999, score: 0 },
   ],
+  tours: 0,
   tramDeck: [
     ...Array.from({ length: 5 }, () => tramCards.horse),
     ...Array.from({ length: 4 }, () => tramCards.steam),
@@ -177,10 +181,13 @@ function renderCards() {
 
 function renderMoney() {
   player1MoneyEl.textContent = formatMoney(gameState.players[0].money);
+  player1ScoreEl.textContent = formatScore(gameState.players[0].score);
   player2MoneyEl.textContent = formatMoney(gameState.players[1].money);
+  player2ScoreEl.textContent = formatScore(gameState.players[1].score);
 }
 
 function renderTramCounts() {
+  tourCountEl.textContent = String(gameState.tours);
   horseTramCountEl.textContent = String(countTramsByCost(5));
   steamTramCountEl.textContent = String(countTramsByCost(10));
   electricTramCountEl.textContent = String(countTramsByCost(15));
@@ -272,6 +279,10 @@ function getTramName(card) {
 
 function formatMoney(amount) {
   return `$${amount}`;
+}
+
+function formatScore(score) {
+  return `${score} VP`;
 }
 
 function countTramsByCost(cost) {

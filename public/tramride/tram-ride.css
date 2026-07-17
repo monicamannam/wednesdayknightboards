@@ -84,9 +84,15 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
+.player-values {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: 0.65rem;
+}
+
 .tram-deck-panel {
   display: grid;
-  gap: 0.7rem;
   justify-items: stretch;
 }
 
