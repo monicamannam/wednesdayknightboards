@@ -363,7 +363,7 @@ function formatScore(score) {
 }
 
 function countTramsByCost(cost) {
-  return getTramsLeft().filter((card) => card.cost === cost).length;
+  return gameState.tramDeck.filter((card) => card.cost === cost).length;
 }
 
 function getSortedHand(player) {
