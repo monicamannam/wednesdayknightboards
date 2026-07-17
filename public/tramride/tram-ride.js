@@ -128,11 +128,12 @@ const cardSheet = {
   ],
 };
 
+const tramsEl = document.querySelector("#trams");
 const stationsEl = document.querySelector("#stations");
 const cardsEl = document.querySelector("#cards");
 const statusEl = document.querySelector("#status");
 const cardSizes = {
-  PASSENGER: { width: 1086, height: 1882.4 },
+  PASSENGER: { width: 1086, height: 1448 },
   STATION: { width: 1086, height: 724 },
   TRAM: { width: 1086, height: 724 },
 };
@@ -140,11 +141,13 @@ const cardSizes = {
 renderCards();
 
 function renderCards() {
+  const tramCards = cardSheet.cards.filter((card) => card.type === "TRAM");
   const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
-  const otherCards = cardSheet.cards.filter((card) => card.type !== "STATION");
+  const passengerCards = cardSheet.cards.filter((card) => card.type === "PASSENGER");
 
+  tramsEl.replaceChildren(...tramCards.map(createCardFigure));
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
-  cardsEl.replaceChildren(...otherCards.map(createCardFigure));
+  cardsEl.replaceChildren(...passengerCards.map(createCardFigure));
   statusEl.textContent = `${cardSheet.cards.length} cards`;
 }
 
