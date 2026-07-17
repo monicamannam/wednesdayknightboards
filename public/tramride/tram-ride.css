@@ -157,6 +157,10 @@ h1 {
   align-items: start;
 }
 
+.hand-grid {
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+
 .card-figure {
   margin: 0;
 }
@@ -259,6 +263,10 @@ h1 {
   .card-grid {
     grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
     gap: 0.75rem;
+  }
+
+  .hand-grid {
+    grid-template-columns: repeat(auto-fill, minmax(9.9rem, 1fr));
   }
 }
 

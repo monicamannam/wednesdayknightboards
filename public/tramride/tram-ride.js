@@ -149,6 +149,7 @@ const cardSizes = {
   TRAM: { width: 1086, height: 724 },
 };
 const passengerColors = ["PURPLE", "BLUE", "GREEN", "RED"];
+const handColorOrder = ["BLUE", "PURPLE", "GREEN", "RED", "*"];
 const passengerDistribution = [
   { number: 1, points: 1, count: 2 },
   { number: 2, points: 1, count: 3 },
@@ -194,7 +195,7 @@ function renderCards() {
   const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
 
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
-  playerHandEl.replaceChildren(...gameState.players[0].hand.map(createHandCardFigure));
+  playerHandEl.replaceChildren(...getSortedHand(gameState.players[0]).map(createHandCardFigure));
   renderMoney();
   renderPassengerPiles();
   renderTramCounts();
@@ -355,6 +356,22 @@ function formatScore(score) {
 
 function countTramsByCost(cost) {
   return gameState.tramDeck.filter((card) => card.cost === cost).length;
+}
+
+function getSortedHand(player) {
+  return [...player.hand].sort((left, right) => {
+    const colorDifference = getHandColorIndex(left.color) - getHandColorIndex(right.color);
+    if (colorDifference !== 0) {
+      return colorDifference;
+    }
+
+    return (left.number ?? 99) - (right.number ?? 99);
+  });
+}
+
+function getHandColorIndex(color) {
+  const index = handColorOrder.indexOf(color);
+  return index === -1 ? handColorOrder.length : index;
 }
 
 function createPassengerDeck() {
