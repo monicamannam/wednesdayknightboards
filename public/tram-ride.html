@@ -14,6 +14,8 @@
         --sheet-url: url("https://i.imgur.com/ZKOFImc.jpeg");
         --sheet-width: 6163;
         --sheet-height: 3387;
+        --card-width: 1086;
+        --card-height: 1448;
       }
 
       * {
@@ -45,9 +47,25 @@
         color: #5d5a54;
       }
 
+      .section-title {
+        margin: 1.5rem 0 0.75rem;
+        color: #5d5a54;
+        font-size: 0.9rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .station-row {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 1rem;
+        align-items: start;
+      }
+
       .card-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
         gap: 1rem;
         align-items: start;
       }
@@ -61,7 +79,7 @@
       .card-frame {
         position: relative;
         width: 100%;
-        aspect-ratio: var(--display-w) / var(--display-h);
+        aspect-ratio: var(--card-width) / var(--card-height);
         overflow: hidden;
         border: 1px solid #d9d1c2;
         border-radius: 8px;
@@ -73,7 +91,7 @@
         position: absolute;
         top: 50%;
         left: 50%;
-        width: calc(var(--crop-w) / var(--display-w) * 100%);
+        width: var(--sprite-width);
         aspect-ratio: var(--crop-w) / var(--crop-h);
         background-image: var(--sheet-url);
         background-repeat: no-repeat;
@@ -87,6 +105,26 @@
         transform-origin: center;
       }
 
+      .passenger-counter {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 0.5rem;
+        align-items: center;
+        min-height: 2.4rem;
+        padding: 0 0.75rem;
+        border: 1px solid #d9d1c2;
+        border-radius: 6px;
+        background: #fffdfa;
+        color: #5d5a54;
+        font-weight: 700;
+      }
+
+      .passenger-counter strong {
+        color: #202124;
+        font-size: 1.25rem;
+        font-variant-numeric: tabular-nums;
+      }
+
       figcaption {
         color: #5d5a54;
         font-size: 0.92rem;
@@ -94,8 +132,13 @@
       }
 
       @media (max-width: 560px) {
+        .station-row {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 0.75rem;
+        }
+
         .card-grid {
-          grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
           gap: 0.75rem;
         }
       }
@@ -107,14 +150,20 @@
         }
 
         .status,
+        .section-title,
         figcaption {
           color: #c8c2b8;
         }
 
+        .passenger-counter,
         .card-frame {
           border-color: #3a3935;
           background: #22211f;
           box-shadow: none;
+        }
+
+        .passenger-counter strong {
+          color: #f3f1ec;
         }
       }
     </style>
@@ -123,7 +172,10 @@
     <main>
       <h1>Tram Ride</h1>
       <p id="status" class="status">Loading cards...</p>
-      <section id="cards" class="card-grid" aria-label="Tram Ride cards"></section>
+      <h2 class="section-title">Stations</h2>
+      <section id="stations" class="station-row" aria-label="Station cards"></section>
+      <h2 class="section-title">Deck</h2>
+      <section id="cards" class="card-grid" aria-label="Other Tram Ride cards"></section>
     </main>
 
     <script>
@@ -257,40 +309,69 @@
         ],
       };
 
+      const stationsEl = document.querySelector("#stations");
       const cardsEl = document.querySelector("#cards");
       const statusEl = document.querySelector("#status");
+      const cardFrame = {
+        width: 1086,
+        height: 1448,
+      };
 
       renderCards();
 
       function renderCards() {
-        cardsEl.replaceChildren(
-          ...cardSheet.cards.map((card) => {
-            const isRotated = card.rotationAppliedDegrees !== 0;
-            const figure = document.createElement("figure");
-            const frame = document.createElement("div");
-            const crop = document.createElement("div");
-            const caption = document.createElement("figcaption");
+        const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
+        const otherCards = cardSheet.cards.filter((card) => card.type !== "STATION");
 
-            frame.className = "card-frame";
-            frame.style.setProperty("--display-w", isRotated ? card.height : card.width);
-            frame.style.setProperty("--display-h", isRotated ? card.width : card.height);
-
-            crop.className = "card-crop";
-            crop.style.setProperty("--x", card.x);
-            crop.style.setProperty("--y", card.y);
-            crop.style.setProperty("--crop-w", card.width);
-            crop.style.setProperty("--crop-h", card.height);
-            crop.style.setProperty("--rotation", `${-card.rotationAppliedDegrees}deg`);
-            crop.setAttribute("role", "img");
-            crop.setAttribute("aria-label", getCardLabel(card));
-
-            caption.textContent = getCardLabel(card);
-            frame.append(crop);
-            figure.append(frame, caption);
-            return figure;
-          }),
-        );
+        stationsEl.replaceChildren(...stationCards.map(createStationCard));
+        cardsEl.replaceChildren(...otherCards.map(createCardFigure));
         statusEl.textContent = `${cardSheet.cards.length} cards`;
+      }
+
+      function createStationCard(card) {
+        const wrapper = document.createElement("div");
+        const counter = document.createElement("div");
+        const label = document.createElement("span");
+        const count = document.createElement("strong");
+
+        counter.className = "passenger-counter";
+        label.textContent = "Passengers";
+        count.textContent = "0";
+
+        counter.append(label, count);
+        wrapper.append(createCardFigure(card), counter);
+        return wrapper;
+      }
+
+      function createCardFigure(card) {
+        const figure = document.createElement("figure");
+        const frame = document.createElement("div");
+        const crop = document.createElement("div");
+        const caption = document.createElement("figcaption");
+
+        frame.className = "card-frame";
+        crop.className = "card-crop";
+        crop.style.setProperty("--x", card.x);
+        crop.style.setProperty("--y", card.y);
+        crop.style.setProperty("--crop-w", card.width);
+        crop.style.setProperty("--crop-h", card.height);
+        crop.style.setProperty("--sprite-width", `${getSpriteWidthPercent(card)}%`);
+        crop.style.setProperty("--rotation", `${card.rotationAppliedDegrees}deg`);
+        crop.setAttribute("role", "img");
+        crop.setAttribute("aria-label", getCardLabel(card));
+
+        caption.textContent = getCardLabel(card);
+        frame.append(crop);
+        figure.append(frame, caption);
+        return figure;
+      }
+
+      function getSpriteWidthPercent(card) {
+        const isRotated = card.rotationAppliedDegrees !== 0;
+        const visualWidth = isRotated ? card.height : card.width;
+        const visualHeight = isRotated ? card.width : card.height;
+        const scale = Math.min(cardFrame.width / visualWidth, cardFrame.height / visualHeight);
+        return (card.width * scale * 100) / cardFrame.width;
       }
 
       function getCardLabel(card) {
