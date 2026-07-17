@@ -134,6 +134,8 @@ const player1MoneyEl = document.querySelector("#player-1-money");
 const player1ScoreEl = document.querySelector("#player-1-score");
 const player2MoneyEl = document.querySelector("#player-2-money");
 const player2ScoreEl = document.querySelector("#player-2-score");
+const passengerDeckCountEl = document.querySelector("#passenger-deck-count");
+const passengerDiscardCountEl = document.querySelector("#passenger-discard-count");
 const tourCountEl = document.querySelector("#tour-count");
 const horseTramCountEl = document.querySelector("#horse-tram-count");
 const steamTramCountEl = document.querySelector("#steam-tram-count");
@@ -146,6 +148,19 @@ const cardSizes = {
   STATION: { width: 1086, height: 724 },
   TRAM: { width: 1086, height: 724 },
 };
+const passengerColors = ["PURPLE", "BLUE", "GREEN", "RED"];
+const passengerDistribution = [
+  { number: 1, points: 1, count: 2 },
+  { number: 2, points: 1, count: 3 },
+  { number: 3, points: 1, count: 3 },
+  { number: 4, points: 1, count: 3 },
+  { number: 5, points: 1, count: 3 },
+  { number: 6, points: 1, count: 3 },
+  { number: 7, points: 2, count: 3 },
+  { number: 8, points: 2, count: 3 },
+  { number: 9, points: 2, count: 3 },
+  { number: 10, points: 3, count: 2 },
+];
 const tramCards = {
   horse: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 5),
   steam: cardSheet.cards.find((card) => card.type === "TRAM" && card.cost === 10),
@@ -157,6 +172,8 @@ const gameState = {
     { name: "Player 2", money: 9999, score: 0 },
   ],
   tours: 0,
+  passengerDeck: shuffle(createPassengerDeck()),
+  passengerDiscard: [],
   tramDeck: [
     ...Array.from({ length: 5 }, () => tramCards.horse),
     ...Array.from({ length: 4 }, () => tramCards.steam),
@@ -174,6 +191,7 @@ function renderCards() {
   stationsEl.replaceChildren(...stationCards.map(createStationCard));
   cardsEl.replaceChildren(...passengerCards.map(createCardFigure));
   renderMoney();
+  renderPassengerPiles();
   renderTramCounts();
   renderTramDeck();
   statusEl.textContent = `${gameState.tramDeck.length} trams in deck`;
@@ -184,6 +202,11 @@ function renderMoney() {
   player1ScoreEl.textContent = formatScore(gameState.players[0].score);
   player2MoneyEl.textContent = formatMoney(gameState.players[1].money);
   player2ScoreEl.textContent = formatScore(gameState.players[1].score);
+}
+
+function renderPassengerPiles() {
+  passengerDeckCountEl.textContent = String(gameState.passengerDeck.length);
+  passengerDiscardCountEl.textContent = String(gameState.passengerDiscard.length);
 }
 
 function renderTramCounts() {
@@ -287,4 +310,43 @@ function formatScore(score) {
 
 function countTramsByCost(cost) {
   return gameState.tramDeck.filter((card) => card.cost === cost).length;
+}
+
+function createPassengerDeck() {
+  const deck = [];
+
+  for (const color of passengerColors) {
+    for (const entry of passengerDistribution) {
+      for (let copy = 1; copy <= entry.count; copy += 1) {
+        deck.push({
+          id: `${color.toLowerCase()}-${entry.number}-${copy}`,
+          type: "PASSENGER",
+          color,
+          number: entry.number,
+          points: entry.points,
+        });
+      }
+    }
+  }
+
+  for (let copy = 1; copy <= 8; copy += 1) {
+    deck.push({
+      id: `wild-${copy}`,
+      type: "PASSENGER",
+      color: "*",
+      number: null,
+      points: 0,
+    });
+  }
+
+  return deck;
+}
+
+function shuffle(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+  return shuffled;
 }
