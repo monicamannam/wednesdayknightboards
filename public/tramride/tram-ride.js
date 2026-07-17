@@ -131,10 +131,6 @@ const cardSheet = {
 const stationsEl = document.querySelector("#stations");
 const cardsEl = document.querySelector("#cards");
 const statusEl = document.querySelector("#status");
-const cardFrame = {
-  width: 1086,
-  height: 1448,
-};
 
 renderCards();
 
@@ -174,22 +170,14 @@ function createCardFigure(card) {
   crop.style.setProperty("--y", card.y);
   crop.style.setProperty("--crop-w", card.width);
   crop.style.setProperty("--crop-h", card.height);
-  crop.style.setProperty("--sprite-width", `${getSpriteWidthPercent(card)}%`);
   crop.style.setProperty("--rotation", `${card.rotationAppliedDegrees}deg`);
+  crop.dataset.rotated = String(card.rotationAppliedDegrees !== 0);
   crop.setAttribute("role", "img");
   crop.setAttribute("aria-label", getCardLabel(card));
 
   frame.append(crop);
   figure.append(frame);
   return figure;
-}
-
-function getSpriteWidthPercent(card) {
-  const isRotated = card.rotationAppliedDegrees !== 0;
-  const visualWidth = isRotated ? card.height : card.width;
-  const visualHeight = isRotated ? card.width : card.height;
-  const scale = Math.min(cardFrame.width / visualWidth, cardFrame.height / visualHeight);
-  return (card.width * scale * 100) / cardFrame.width;
 }
 
 function getCardLabel(card) {

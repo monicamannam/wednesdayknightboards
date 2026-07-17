@@ -79,8 +79,8 @@ h1 {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: var(--sprite-width);
-  aspect-ratio: var(--crop-w) / var(--crop-h);
+  width: var(--sprite-width, 100%);
+  height: var(--sprite-height, 100%);
   background-image: var(--sheet-url);
   background-repeat: no-repeat;
   background-size:
@@ -91,6 +91,11 @@ h1 {
     calc(var(--y) / (var(--sheet-height) - var(--crop-h)) * 100%);
   transform: translate(-50%, -50%) rotate(var(--rotation));
   transform-origin: center;
+}
+
+.card-crop[data-rotated="true"] {
+  width: calc(var(--card-height) / var(--card-width) * 100%);
+  height: calc(var(--card-width) / var(--card-height) * 100%);
 }
 
 .passenger-counter {
