@@ -49,7 +49,7 @@ h1 {
 
 .game-topbar {
   display: grid;
-  grid-template-columns: minmax(12rem, 18rem) minmax(10rem, 14rem) minmax(14rem, 22rem);
+  grid-template-columns: minmax(12rem, 18rem) minmax(10rem, 14rem);
   gap: 1rem;
   align-items: start;
   justify-content: space-between;
@@ -91,38 +91,6 @@ h1 {
   gap: 0.65rem;
 }
 
-.tram-deck-panel {
-  display: grid;
-  justify-items: stretch;
-}
-
-.tram-deck {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1086 / 724;
-}
-
-.tram-deck .card-figure {
-  position: absolute;
-  inset: 0;
-}
-
-.tram-deck .card-figure:nth-child(1) {
-  z-index: 3;
-}
-
-.tram-deck .card-figure:nth-child(2) {
-  z-index: 2;
-  transform: translate(0.45rem, 0.45rem);
-  opacity: 0.55;
-}
-
-.tram-deck .card-figure:nth-child(3) {
-  z-index: 1;
-  transform: translate(0.9rem, 0.9rem);
-  opacity: 0.32;
-}
-
 .buy-button {
   min-height: 2.8rem;
   border: 0;
@@ -138,6 +106,18 @@ h1 {
 .buy-button:disabled {
   cursor: not-allowed;
   opacity: 0.55;
+}
+
+.tram-market {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.tram-market-card {
+  display: grid;
+  gap: 0.7rem;
 }
 
 .station-row {
@@ -257,6 +237,11 @@ h1 {
 
   .station-row {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .tram-market {
+    grid-template-columns: 1fr;
     gap: 0.75rem;
   }
 

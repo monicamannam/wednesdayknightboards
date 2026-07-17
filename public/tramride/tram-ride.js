@@ -128,8 +128,7 @@ const cardSheet = {
   ],
 };
 
-const tramDeckEl = document.querySelector("#tram-deck");
-const buyTramButton = document.querySelector("#buy-tram");
+const tramMarketEl = document.querySelector("#tram-market");
 const player1MoneyEl = document.querySelector("#player-1-money");
 const player1ScoreEl = document.querySelector("#player-1-score");
 const player2MoneyEl = document.querySelector("#player-2-money");
@@ -180,16 +179,13 @@ const gameState = {
   tours: 0,
   passengerDeck: shuffle(createPassengerDeck()),
   passengerDiscard: [],
-  tramDeck: [
-    ...Array.from({ length: 5 }, () => tramCards.horse),
-    ...Array.from({ length: 4 }, () => tramCards.steam),
-    ...Array.from({ length: 7 }, () => tramCards.electric),
-  ].filter(Boolean),
+  tramDeck: createTramDeck(),
+  tramMarket: [],
 };
 
 dealStartingHands();
+refillTramMarket();
 renderCards();
-buyTramButton.addEventListener("click", buyTopTram);
 
 function renderCards() {
   const stationCards = cardSheet.cards.filter((card) => card.type === "STATION");
@@ -199,8 +195,8 @@ function renderCards() {
   renderMoney();
   renderPassengerPiles();
   renderTramCounts();
-  renderTramDeck();
-  statusEl.textContent = `${gameState.tramDeck.length} trams in deck`;
+  renderTramMarket();
+  statusEl.textContent = `${getTramsLeft().length} trams left`;
 }
 
 function dealStartingHands() {
@@ -233,32 +229,29 @@ function renderTramCounts() {
   electricTramCountEl.textContent = String(countTramsByCost(15));
 }
 
-function renderTramDeck() {
-  const previewCards = gameState.tramDeck.slice(0, 3);
-  tramDeckEl.replaceChildren(...previewCards.map(createCardFigure));
-
-  const topCard = gameState.tramDeck[0];
-  if (topCard) {
-    buyTramButton.disabled = gameState.players[0].money < topCard.cost;
-    buyTramButton.textContent = `Buy top tram - ${formatMoney(topCard.cost)}`;
-  } else {
-    buyTramButton.disabled = true;
-    buyTramButton.textContent = "No trams left";
-  }
+function renderTramMarket() {
+  tramMarketEl.replaceChildren(
+    ...gameState.tramMarket.map((card, index) => createTramMarketCard(card, index)),
+  );
 }
 
-function buyTopTram() {
-  const topCard = gameState.tramDeck[0];
-  if (!topCard || gameState.players[0].money < topCard.cost) {
+function buyMarketTram(index) {
+  const card = gameState.tramMarket[index];
+  if (!card || gameState.players[0].money < card.cost) {
     return;
   }
 
-  gameState.players[0].money -= topCard.cost;
-  gameState.tramDeck.shift();
+  gameState.players[0].money -= card.cost;
+  gameState.tramMarket.splice(index, 1);
+  const replacement = gameState.tramDeck.shift();
+  if (replacement) {
+    gameState.tramMarket.splice(index, 0, replacement);
+  }
+
   renderMoney();
   renderTramCounts();
-  renderTramDeck();
-  statusEl.textContent = `Player 1 bought a ${getTramName(topCard)} for ${formatMoney(topCard.cost)}.`;
+  renderTramMarket();
+  statusEl.textContent = `Player 1 bought a ${getTramName(card)} for ${formatMoney(card.cost)}.`;
 }
 
 function createStationCard(card) {
@@ -300,6 +293,21 @@ function createCardFigure(card) {
   frame.append(crop);
   figure.append(frame);
   return figure;
+}
+
+function createTramMarketCard(card, index) {
+  const wrapper = document.createElement("div");
+  const button = document.createElement("button");
+
+  wrapper.className = "tram-market-card";
+  button.className = "buy-button";
+  button.type = "button";
+  button.disabled = gameState.players[0].money < card.cost;
+  button.textContent = `Buy - ${formatMoney(card.cost)}`;
+  button.addEventListener("click", () => buyMarketTram(index));
+
+  wrapper.append(createCardFigure(card), button);
+  return wrapper;
 }
 
 function createHandCardFigure(card) {
@@ -355,7 +363,7 @@ function formatScore(score) {
 }
 
 function countTramsByCost(cost) {
-  return gameState.tramDeck.filter((card) => card.cost === cost).length;
+  return getTramsLeft().filter((card) => card.cost === cost).length;
 }
 
 function getSortedHand(player) {
@@ -402,6 +410,24 @@ function createPassengerDeck() {
   }
 
   return deck;
+}
+
+function createTramDeck() {
+  return [
+    ...Array.from({ length: 5 }, () => tramCards.horse),
+    ...Array.from({ length: 4 }, () => tramCards.steam),
+    ...Array.from({ length: 7 }, () => tramCards.electric),
+  ].filter(Boolean);
+}
+
+function refillTramMarket() {
+  while (gameState.tramMarket.length < 3 && gameState.tramDeck.length > 0) {
+    gameState.tramMarket.push(gameState.tramDeck.shift());
+  }
+}
+
+function getTramsLeft() {
+  return [...gameState.tramMarket, ...gameState.tramDeck];
 }
 
 function shuffle(items) {
